@@ -32,6 +32,8 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+.claude/
+/Project_Docs/
 
 # Symbolication related
 app.*.symbols
@@ -46,4 +48,3 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
-/GeoDiary_Project_Documentation
