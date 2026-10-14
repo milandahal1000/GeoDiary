@@ -9,10 +9,7 @@ import 'package:geodiary/features/journal/presentation/pages/add_memory_page.dar
 class MemoryDetailPage extends StatefulWidget {
   final Memory memory;
 
-  const MemoryDetailPage({
-    super.key,
-    required this.memory,
-  });
+  const MemoryDetailPage({super.key, required this.memory});
 
   @override
   State<MemoryDetailPage> createState() => _MemoryDetailPageState();
@@ -49,9 +46,7 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
               // Navigate to edit memory screen
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => AddMemoryPage(
-                    memory: widget.memory,
-                  ),
+                  builder: (_) => AddMemoryPage(memory: widget.memory),
                 ),
               );
             },
@@ -91,19 +86,17 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
               _formatDate(widget.memory.visitDate),
             ),
             const SizedBox(height: 8),
-            if (widget.memory.latitude != null && widget.memory.longitude != null)
+            if (widget.memory.latitude != null &&
+                widget.memory.longitude != null)
               _buildInfoRow(
                 Icons.location_on,
                 'Location',
                 '${widget.memory.latitude}, ${widget.memory.longitude}',
               ),
             const SizedBox(height: 8),
-            if (widget.memory.address != null && widget.memory.address!.isNotEmpty)
-              _buildInfoRow(
-                Icons.map,
-                'Address',
-                widget.memory.address!,
-              ),
+            if (widget.memory.address != null &&
+                widget.memory.address!.isNotEmpty)
+              _buildInfoRow(Icons.map, 'Address', widget.memory.address!),
             const SizedBox(height: 16),
             _buildInfoRow(
               Icons.access_time,
@@ -124,9 +117,7 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
           // Navigate to add memory screen for editing
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (_) => AddMemoryPage(
-                memory: widget.memory,
-              ),
+              builder: (_) => AddMemoryPage(memory: widget.memory),
             ),
           );
         },
@@ -157,10 +148,7 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
           Icon(icon, size: 20, color: Colors.grey[600]),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              '$label: $value',
-              style: TextStyle(fontSize: 16),
-            ),
+            child: Text('$label: $value', style: TextStyle(fontSize: 16)),
           ),
         ],
       ),
@@ -183,7 +171,9 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Memory'),
-        content: const Text('Are you sure you want to delete this memory? This action cannot be undone.'),
+        content: const Text(
+          'Are you sure you want to delete this memory? This action cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -206,9 +196,7 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
                 );
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Delete'),
           ),
         ],

@@ -189,18 +189,11 @@ class _JournalPageState extends State<JournalPage> {
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.search,
-                  size: 40,
-                  color: Color(0xFF287D65),
-                ),
+                Icon(Icons.search, size: 40, color: Color(0xFF287D65)),
                 SizedBox(height: 14),
                 Text(
                   'No memories found',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
                 Text(
@@ -221,18 +214,11 @@ class _JournalPageState extends State<JournalPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.search_off,
-                    size: 66,
-                    color: Colors.grey.shade400,
-                  ),
+                  Icon(Icons.search_off, size: 66, color: Colors.grey.shade400),
                   const SizedBox(height: 14),
                   const Text(
                     'No matching memories',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -273,10 +259,7 @@ class _JournalPageState extends State<JournalPage> {
                 SizedBox(height: 14),
                 Text(
                   'Every place has a story.',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
                 Text(
@@ -314,10 +297,7 @@ class _JournalPageState extends State<JournalPage> {
                   const SizedBox(height: 14),
                   const Text(
                     'No memories yet',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -345,11 +325,7 @@ class _JournalPageState extends State<JournalPage> {
         onTap: () {
           // Navigate to memory details page
           Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => MemoryDetailPage(
-                memory: memory,
-              ),
-            ),
+            MaterialPageRoute(builder: (_) => MemoryDetailPage(memory: memory)),
           );
         },
         child: Padding(
@@ -369,22 +345,14 @@ class _JournalPageState extends State<JournalPage> {
                     ),
                   ),
                   if (memory.latitude != null && memory.longitude != null)
-                    Icon(
-                      Icons.location_on,
-                      size: 16,
-                      color: Colors.grey[600],
-                    ),
+                    Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
                 ],
               ),
               const SizedBox(height: 8),
-              if (memory.description != null &&
-                  memory.description!.isNotEmpty)
+              if (memory.description != null && memory.description!.isNotEmpty)
                 Text(
                   memory.description!,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -411,9 +379,7 @@ class _JournalPageState extends State<JournalPage> {
                           // Navigate to edit memory screen
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) => AddMemoryPage(
-                                memory: memory,
-                              ),
+                              builder: (_) => AddMemoryPage(memory: memory),
                             ),
                           );
                         },
@@ -441,7 +407,9 @@ class _JournalPageState extends State<JournalPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Memory'),
-        content: const Text('Are you sure you want to delete this memory? This action cannot be undone.'),
+        content: const Text(
+          'Are you sure you want to delete this memory? This action cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -465,9 +433,7 @@ class _JournalPageState extends State<JournalPage> {
                 );
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Delete'),
           ),
         ],
@@ -513,10 +479,7 @@ class MemorySearchDelegate extends SearchDelegate<String> {
   final String initialQuery;
   final Function(String) onSearch;
 
-  MemorySearchDelegate({
-    required this.initialQuery,
-    required this.onSearch,
-  });
+  MemorySearchDelegate({required this.initialQuery, required this.onSearch});
 
   @override
   List<Widget> buildActions(BuildContext context) {
@@ -546,10 +509,7 @@ class MemorySearchDelegate extends SearchDelegate<String> {
     return Container(
       color: Colors.white,
       child: Center(
-        child: Text(
-          'Searching for "$query"',
-          style: TextStyle(fontSize: 16),
-        ),
+        child: Text('Searching for "$query"', style: TextStyle(fontSize: 16)),
       ),
     );
   }
@@ -559,9 +519,8 @@ class MemorySearchDelegate extends SearchDelegate<String> {
     final List<String> suggestions = [];
     return ListView.builder(
       itemCount: suggestions.length,
-      itemBuilder: (context, index) => ListTile(
-        title: Text(suggestions[index]),
-      ),
+      itemBuilder: (context, index) =>
+          ListTile(title: Text(suggestions[index])),
     );
   }
 }

@@ -12,10 +12,7 @@ import 'package:geolocator/geolocator.dart';
 class AddMemoryPage extends StatefulWidget {
   final Memory? memory;
 
-  const AddMemoryPage({
-    super.key,
-    this.memory,
-  });
+  const AddMemoryPage({super.key, this.memory});
 
   @override
   State<AddMemoryPage> createState() => _AddMemoryPageState();
@@ -126,7 +123,9 @@ class _AddMemoryPageState extends State<AddMemoryPage> {
       latitude: _latitude,
       longitude: _longitude,
       address: _address,
-      createdAt: _isEditing ? widget.memory!.createdAt : DateTime.now().millisecondsSinceEpoch,
+      createdAt: _isEditing
+          ? widget.memory!.createdAt
+          : DateTime.now().millisecondsSinceEpoch,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
 

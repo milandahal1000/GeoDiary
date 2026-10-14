@@ -148,18 +148,11 @@ class _MapPageState extends State<MapPage> {
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.map_outlined,
-                  size: 40,
-                  color: Color(0xFF287D65),
-                ),
+                Icon(Icons.map_outlined, size: 40, color: Color(0xFF287D65)),
                 SizedBox(height: 14),
                 Text(
                   'Memories on the map',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
                 Text(
@@ -196,10 +189,7 @@ class _MapPageState extends State<MapPage> {
                   const SizedBox(height: 14),
                   const Text(
                     'No memories with location yet',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 8),
                   Text(
