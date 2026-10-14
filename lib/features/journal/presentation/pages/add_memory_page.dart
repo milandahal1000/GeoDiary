@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:geodiary/features/journal/data/memory_repository.dart';
 import 'package:geodiary/features/journal/domain/memory.dart';
+import 'package:geolocator/geolocator.dart';
 
 /// The Add Memory screen allows users to create a new memory.
 class AddMemoryPage extends StatefulWidget {
@@ -21,6 +22,9 @@ class _AddMemoryPageState extends State<AddMemoryPage> {
   final _descriptionController = TextEditingController();
   DateTime? _visitDate;
   File? _imageFile; // Temporary file from image picker
+  double? _latitude;
+  double? _longitude;
+  String? _address;
 
   @override
   void dispose() {
@@ -95,9 +99,9 @@ class _AddMemoryPageState extends State<AddMemoryPage> {
           : _descriptionController.text,
       visitDate: visitDate,
       photoPath: imagePath,
-      latitude: null,
-      longitude: null,
-      address: null,
+      latitude: _latitude,
+      longitude: _longitude,
+      address: _address,
       createdAt: DateTime.now().millisecondsSinceEpoch,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
@@ -229,20 +233,14 @@ class _AddMemoryPageState extends State<AddMemoryPage> {
                   onTap: _pickVisitDate,
                 ),
                 const SizedBox(height: 24),
-                // Location placeholder (to be implemented in Phase 4)
                 Card(
                   child: ListTile(
                     leading: const Icon(Icons.location_on),
                     title: const Text('Location'),
-                    subtitle: const Text('Not added'),
+                    subtitle: Text(_address ?? 'Not added'),
                     trailing: IconButton(
                       icon: const Icon(Icons.add_location),
-                      onPressed: () {
-                        // TODO: Implement location picking in Phase 4
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Location coming soon')),
-                        );
-                      },
+                      onPressed: _getCurrentLocation,
                     ),
                   ),
                 ),
@@ -267,6 +265,49 @@ class _AddMemoryPageState extends State<AddMemoryPage> {
       setState(() {
         _visitDate = picked;
       });
+    }
+  }
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      // Request location permission
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Location permissions are denied')),
+            );
+          }
+          return;
+        }
+      }
+
+      // Get current position
+      Position position = await Geolocator.getCurrentPosition(
+        // ignore: deprecated_member_use
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      // Use coordinates as address (geocoding temporarily disabled due to import issues)
+      String address = '${position.latitude}, ${position.longitude}';
+
+      // Update state
+      if (mounted) {
+        setState(() {
+          _latitude = position.latitude;
+          _longitude = position.longitude;
+          _address = address;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error getting location: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to get location: $e')));
+      }
     }
   }
 }
