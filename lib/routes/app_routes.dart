@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geodiary/features/journal/presentation/pages/journal_page.dart';
+import 'package:geodiary/features/journal/presentation/pages/add_memory_page.dart';
 import 'package:geodiary/features/map/presentation/pages/map_page.dart';
 import 'package:geodiary/routes/route_names.dart';
 
@@ -9,8 +10,9 @@ class AppRoutes {
   static Map<String, WidgetBuilder> getRoutes() {
     return {
       RouteNames.journal: (_) => const JournalPage(),
+      RouteNames.addMemory: (_) => const AddMemoryPage(),
       RouteNames.map: (_) => const MapPage(),
-      // AddMemory, MemoryDetails, EditMemory will be added later.
+      // MemoryDetails, EditMemory will be added later.
     };
   }
 
