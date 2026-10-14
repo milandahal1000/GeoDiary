@@ -1,6 +1,13 @@
 # geodiary
 
-A new Flutter project.
+A new Flutter project for GeoDiary.
+
+## Project Setup
+
+- Flutter version: 3.47.7
+- Dart version: 3.13.5
+- Android SDK version: 36.0.0
+- Target platform: Android
 
 ## Getting Started
 
