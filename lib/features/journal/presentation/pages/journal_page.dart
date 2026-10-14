@@ -16,6 +16,8 @@ class JournalPage extends StatefulWidget {
 class _JournalPageState extends State<JournalPage> {
   late Future<List<Memory>> _memoriesFuture;
   final MemoryRepository _repository = MemoryRepository.instance();
+  String _searchQuery = '';
+  bool _sortAscending = false; // false = newest first, true = oldest first
 
   @override
   void initState() {
@@ -33,14 +35,37 @@ class _JournalPageState extends State<JournalPage> {
     _loadMemories();
   }
 
+  List<Memory> _applySearchFilter(List<Memory> memories) {
+    if (_searchQuery.isEmpty) {
+      return memories;
+    }
+
+    final queryLower = _searchQuery.toLowerCase();
+    return memories.where((memory) {
+      final titleLower = memory.title.toLowerCase();
+      final descriptionLower = memory.description ?? '';
+      return titleLower.contains(queryLower) ||
+          descriptionLower.toLowerCase().contains(queryLower);
+    }).toList();
+  }
+
+  List<Memory> _applySorting(List<Memory> memories) {
+    final sorted = List<Memory>.from(memories);
+    sorted.sort((a, b) {
+      final comparison = a.visitDate.compareTo(b.visitDate);
+      return _sortAscending ? comparison : -comparison;
+    });
+    return sorted;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'GeoDiary',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 25),
             ),
@@ -52,6 +77,31 @@ class _JournalPageState extends State<JournalPage> {
             onPressed: _refreshMemories,
             tooltip: 'Refresh',
             icon: const Icon(Icons.refresh),
+          ),
+          PopupMenuButton<SortOption>(
+            onSelected: (option) {
+              setState(() {
+                _sortAscending = option == SortOption.oldestFirst;
+              });
+              _loadMemories();
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: SortOption.newestFirst,
+                child: Text('Sort: Newest First'),
+              ),
+              const PopupMenuItem(
+                value: SortOption.oldestFirst,
+                child: Text('Sort: Oldest First'),
+              ),
+            ],
+            icon: const Icon(Icons.sort),
+            tooltip: 'Sort',
+          ),
+          IconButton(
+            onPressed: () => _showSearchDialog(context),
+            tooltip: 'Search',
+            icon: const Icon(Icons.search),
           ),
           IconButton(
             onPressed: () {},
@@ -75,15 +125,21 @@ class _JournalPageState extends State<JournalPage> {
             }
 
             final memories = snapshot.data ?? [];
+            final filteredMemories = _applySearchFilter(memories);
+            final sortedMemories = _applySorting(filteredMemories);
 
-            if (memories.isEmpty) {
-              return _buildEmptyState();
+            if (sortedMemories.isEmpty) {
+              if (_searchQuery.isNotEmpty) {
+                return _buildSearchEmptyState();
+              } else {
+                return _buildEmptyState();
+              }
             }
 
             return ListView.builder(
-              itemCount: memories.length,
+              itemCount: sortedMemories.length,
               itemBuilder: (context, index) {
-                final memory = memories[index];
+                final memory = sortedMemories[index];
                 return _buildMemoryCard(context, memory);
               },
             );
@@ -99,6 +155,97 @@ class _JournalPageState extends State<JournalPage> {
         label: const Text('Add memory'),
       ),
       bottomNavigationBar: _buildBottomNavigationBar(context),
+    );
+  }
+
+  void _showSearchDialog(BuildContext context) {
+    showSearch(
+      context: context,
+      delegate: MemorySearchDelegate(
+        initialQuery: _searchQuery,
+        onSearch: (query) {
+          setState(() {
+            _searchQuery = query;
+          });
+          _loadMemories();
+        },
+      ),
+    );
+  }
+
+  Widget _buildSearchEmptyState() {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE1EEE7),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.search,
+                  size: 40,
+                  color: Color(0xFF287D65),
+                ),
+                SizedBox(height: 14),
+                Text(
+                  'No memories found',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Try adjusting your search terms.',
+                  style: TextStyle(fontSize: 14, height: 1.5),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 28),
+          const Text(
+            'Your journal',
+            style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 14),
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.search_off,
+                    size: 66,
+                    color: Colors.grey.shade400,
+                  ),
+                  const SizedBox(height: 14),
+                  const Text(
+                    'No matching memories',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Your search didn\'t match any memories.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -265,7 +412,7 @@ class _JournalPageState extends State<JournalPage> {
                           Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (_) => AddMemoryPage(
-                                // TODO: Pass memory for editing
+                                memory: memory,
                               ),
                             ),
                           );
@@ -306,24 +453,16 @@ class _JournalPageState extends State<JournalPage> {
               try {
                 final repository = MemoryRepository.instance();
                 await repository.deleteMemory(memoryId);
-                final isMounted = mounted;
-                if (isMounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Memory deleted successfully')),
-                  );
-                  _refreshMemories();
-                } else {
-                  return;
-                }
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Memory deleted successfully')),
+                );
+                _refreshMemories();
               } catch (e) {
-                final isMounted = mounted;
-                if (isMounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to delete memory: $e')),
-                  );
-                } else {
-                  return;
-                }
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Failed to delete memory: $e')),
+                );
               }
             },
             style: ElevatedButton.styleFrom(
@@ -365,5 +504,64 @@ class _JournalPageState extends State<JournalPage> {
         Navigator.of(context).pushNamed(RouteNames.map);
         break;
     }
+  }
+}
+
+enum SortOption { newestFirst, oldestFirst }
+
+class MemorySearchDelegate extends SearchDelegate<String> {
+  final String initialQuery;
+  final Function(String) onSearch;
+
+  MemorySearchDelegate({
+    required this.initialQuery,
+    required this.onSearch,
+  });
+
+  @override
+  List<Widget> buildActions(BuildContext context) {
+    return [
+      IconButton(
+        onPressed: () {
+          query = '';
+        },
+        icon: const Icon(Icons.clear),
+      ),
+    ];
+  }
+
+  @override
+  Widget buildLeading(BuildContext context) {
+    return IconButton(
+      onPressed: () {
+        close(context, initialQuery);
+      },
+      icon: const Icon(Icons.arrow_back),
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    onSearch(query);
+    return Container(
+      color: Colors.white,
+      child: Center(
+        child: Text(
+          'Searching for "$query"',
+          style: TextStyle(fontSize: 16),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    final List<String> suggestions = [];
+    return ListView.builder(
+      itemCount: suggestions.length,
+      itemBuilder: (context, index) => ListTile(
+        title: Text(suggestions[index]),
+      ),
+    );
   }
 }

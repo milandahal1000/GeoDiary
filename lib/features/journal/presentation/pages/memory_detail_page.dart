@@ -194,24 +194,16 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
               Navigator.of(context).pop();
               try {
                 await _repository.deleteMemory(widget.memory.id!);
-                final isMounted = mounted;
-                if (isMounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Memory deleted successfully')),
-                  );
-                  Navigator.of(context).pop(); // Go back to journal
-                } else {
-                  return;
-                }
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Memory deleted successfully')),
+                );
+                Navigator.of(context).pop(); // Go back to journal
               } catch (e) {
-                final isMounted = mounted;
-                if (isMounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to delete memory: $e')),
-                  );
-                } else {
-                  return;
-                }
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Failed to delete memory: $e')),
+                );
               }
             },
             style: ElevatedButton.styleFrom(
