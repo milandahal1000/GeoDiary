@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "513485476332",
+    "project_id": "geodiary-36da3",
+    "storage_bucket": "geodiary-36da3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:513485476332:android:114766982ce15959ddb0c9",
+        "android_client_info": {
+          "package_name": "com.example.geodiary"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAHPTu0WaXWcXwbN22kCCNswo4t1iujurU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
