@@ -8,9 +8,14 @@ import 'package:geodiary/features/journal/data/memory_repository.dart';
 import 'package:geodiary/features/journal/domain/memory.dart';
 import 'package:geolocator/geolocator.dart';
 
-/// The Add Memory screen allows users to create a new memory.
+/// The Add Memory screen allows users to create a new memory or edit an existing one.
 class AddMemoryPage extends StatefulWidget {
-  const AddMemoryPage({super.key});
+  final Memory? memory;
+
+  const AddMemoryPage({
+    super.key,
+    this.memory,
+  });
 
   @override
   State<AddMemoryPage> createState() => _AddMemoryPageState();
@@ -25,6 +30,25 @@ class _AddMemoryPageState extends State<AddMemoryPage> {
   double? _latitude;
   double? _longitude;
   String? _address;
+  bool _isEditing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.memory != null) {
+      _isEditing = true;
+      final memory = widget.memory!;
+      _titleController.text = memory.title;
+      _descriptionController.text = memory.description ?? '';
+      _visitDate = DateTime.fromMillisecondsSinceEpoch(memory.visitDate);
+      _latitude = memory.latitude;
+      _longitude = memory.longitude;
+      _address = memory.address;
+
+      // If there's an existing photo, we'd need to load it
+      // For now, we'll leave _imageFile as null and allow user to change it
+    }
+  }
 
   @override
   void dispose() {
@@ -102,18 +126,28 @@ class _AddMemoryPageState extends State<AddMemoryPage> {
       latitude: _latitude,
       longitude: _longitude,
       address: _address,
-      createdAt: DateTime.now().millisecondsSinceEpoch,
+      createdAt: _isEditing ? widget.memory!.createdAt : DateTime.now().millisecondsSinceEpoch,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
 
     try {
       final repository = MemoryRepository.instance();
-      await repository.insertMemory(memory);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Memory saved successfully!')),
-        );
-        Navigator.of(context).pop();
+      if (_isEditing) {
+        await repository.updateMemory(memory);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Memory updated successfully!')),
+          );
+          Navigator.of(context).pop();
+        }
+      } else {
+        await repository.insertMemory(memory);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Memory saved successfully!')),
+          );
+          Navigator.of(context).pop();
+        }
       }
     } catch (e) {
       debugPrint('Error saving memory: $e');
@@ -129,7 +163,7 @@ class _AddMemoryPageState extends State<AddMemoryPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('New memory'),
+        title: Text(_isEditing ? 'Edit Memory' : 'New memory'),
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.of(context).pop(),
