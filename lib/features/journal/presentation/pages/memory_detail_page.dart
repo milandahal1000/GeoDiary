@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geodiary/features/journal/data/memory_repository.dart';
 import 'package:geodiary/features/journal/domain/memory.dart';
 import 'package:geodiary/features/journal/presentation/pages/add_memory_page.dart';
@@ -16,11 +17,12 @@ class MemoryDetailPage extends StatefulWidget {
 }
 
 class _MemoryDetailPageState extends State<MemoryDetailPage> {
-  final MemoryRepository _repository = MemoryRepository.instance();
+  late final MemoryRepository _repository;
 
   @override
   void initState() {
     super.initState();
+    _repository = context.read<MemoryRepository>();
     // No need to load memory as we already have it
   }
 

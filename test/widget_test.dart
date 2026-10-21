@@ -1,30 +1,45 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:geodiary/main.dart';
+import 'package:geodiary/features/journal/domain/memory.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const GeoDiaryApp());
+  group('Memory local serialization', () {
+    test('round-trips through a map', () {
+      final memory = Memory(
+        id: '123',
+        title: 'Test Memory',
+        description: 'A test description',
+        visitDate: 1700000000000,
+        photoPath: '/path/to/photo.jpg',
+        latitude: 10.0,
+        longitude: 20.0,
+        address: 'Test Address',
+        createdAt: 1700000000000,
+        updatedAt: 1700000000000,
+      );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+      final restored = Memory.fromMap(memory.toMap());
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+      expect(restored, equals(memory));
+    });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    test('rejects an empty title', () {
+      expect(
+        () => Memory(title: '', visitDate: 0, createdAt: 0, updatedAt: 0),
+        throwsArgumentError,
+      );
+    });
+
+    test('requires latitude and longitude together', () {
+      expect(
+        () => Memory(
+          title: 'Test',
+          visitDate: 0,
+          latitude: 10.0,
+          createdAt: 0,
+          updatedAt: 0,
+        ),
+        throwsArgumentError,
+      );
+    });
   });
 }

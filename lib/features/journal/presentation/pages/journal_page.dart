@@ -1,4 +1,7 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geodiary/features/journal/data/memory_repository.dart';
 import 'package:geodiary/features/journal/domain/memory.dart';
 import 'package:geodiary/features/journal/presentation/pages/add_memory_page.dart';
@@ -15,13 +18,14 @@ class JournalPage extends StatefulWidget {
 
 class _JournalPageState extends State<JournalPage> {
   late Future<List<Memory>> _memoriesFuture;
-  final MemoryRepository _repository = MemoryRepository.instance();
+  late final MemoryRepository _repository;
   String _searchQuery = '';
   bool _sortAscending = false; // false = newest first, true = oldest first
 
   @override
   void initState() {
     super.initState();
+    _repository = context.read<MemoryRepository>();
     _loadMemories();
   }
 
@@ -104,7 +108,9 @@ class _JournalPageState extends State<JournalPage> {
             icon: const Icon(Icons.search),
           ),
           IconButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.of(context).pushNamed(RouteNames.settings);
+            },
             tooltip: 'Settings',
             icon: const Icon(Icons.settings_outlined),
           ),
@@ -402,7 +408,7 @@ class _JournalPageState extends State<JournalPage> {
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context, int memoryId) {
+  void _showDeleteConfirmation(BuildContext context, String memoryId) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -419,8 +425,7 @@ class _JournalPageState extends State<JournalPage> {
             onPressed: () async {
               Navigator.of(context).pop();
               try {
-                final repository = MemoryRepository.instance();
-                await repository.deleteMemory(memoryId);
+                await _repository.deleteMemory(memoryId);
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Memory deleted successfully')),
@@ -428,6 +433,7 @@ class _JournalPageState extends State<JournalPage> {
                 _refreshMemories();
               } catch (e) {
                 if (!mounted) return;
+                // ignore: duplicate_ignore
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Failed to delete memory: $e')),
                 );

@@ -4,7 +4,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
-/// Helper class to manage the SQLite database.
+/// Helper class to manage the local SQLite database.
 class DatabaseHelper {
   DatabaseHelper._privateConstructor(this._databaseName);
   static final DatabaseHelper _instance = DatabaseHelper._privateConstructor(
@@ -37,16 +37,16 @@ class DatabaseHelper {
     String path = join(documentsDirectory.path, _databaseName);
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
-      // onUpgrade: _onUpgrade, // We'll implement migrations later if needed
+      onUpgrade: _onUpgrade,
     );
   }
 
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE memories (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id TEXT PRIMARY KEY,
         title TEXT NOT NULL,
         description TEXT,
         visitDate INTEGER NOT NULL,
@@ -60,5 +60,23 @@ class DatabaseHelper {
     ''');
   }
 
-  // TODO: Implement onUpgrade for schema migrations when needed.
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Version 1 used INTEGER primary keys, while the app uses String ids.
+      // Rebuild the table and preserve any existing rows.
+      await db.execute('ALTER TABLE memories RENAME TO memories_v1');
+      await _onCreate(db, newVersion);
+      await db.execute('''
+        INSERT INTO memories (
+          id, title, description, visitDate, photoPath, latitude, longitude,
+          address, createdAt, updatedAt
+        )
+        SELECT
+          CAST(id AS TEXT), title, description, visitDate, photoPath, latitude,
+          longitude, address, createdAt, updatedAt
+        FROM memories_v1
+      ''');
+      await db.execute('DROP TABLE memories_v1');
+    }
+  }
 }

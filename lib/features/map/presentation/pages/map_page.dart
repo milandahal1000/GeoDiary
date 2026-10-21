@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geodiary/features/journal/data/memory_repository.dart';
 import 'package:geodiary/features/journal/domain/memory.dart';
@@ -14,13 +15,14 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
-  final MemoryRepository _repository = MemoryRepository.instance();
+  late final MemoryRepository _repository;
   late Future<List<Memory>> _memoriesFuture;
   final List<Marker> _markers = [];
 
   @override
   void initState() {
     super.initState();
+    _repository = context.read<MemoryRepository>();
     _loadMemories();
   }
 
@@ -44,6 +46,13 @@ class _MapPageState extends State<MapPage> {
             onPressed: _refreshMemories,
             tooltip: 'Refresh',
             icon: const Icon(Icons.refresh),
+          ),
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).pushNamed(RouteNames.settings);
+            },
+            tooltip: 'Settings',
+            icon: const Icon(Icons.settings_outlined),
           ),
         ],
       ),

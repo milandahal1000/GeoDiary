@@ -12,7 +12,20 @@
           "package_name": "com.example.geodiary"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "513485476332-c69s3mh9a161q1antcnt99uab7ofal4k.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.geodiary",
+            "certificate_hash": "60f8121b16c300b0b7f1d3c71c7decc5ff427562"
+          }
+        },
+        {
+          "client_id": "513485476332-sdobf5p4a3i50aqeo0avkignbl55u7as.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAHPTu0WaXWcXwbN22kCCNswo4t1iujurU"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "513485476332-sdobf5p4a3i50aqeo0avkignbl55u7as.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "513485476332-s9kep3uhvlo8el5gu5fkvic12thm98hr.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.geodiary"
+              }
+            }
+          ]
         }
       }
     }

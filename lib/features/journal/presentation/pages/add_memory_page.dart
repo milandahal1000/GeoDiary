@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -22,28 +25,33 @@ class _AddMemoryPageState extends State<AddMemoryPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _visitDateController = TextEditingController();
   DateTime? _visitDate;
   File? _imageFile; // Temporary file from image picker
   double? _latitude;
   double? _longitude;
   String? _address;
   bool _isEditing = false;
+  bool _removeExistingPhoto = false;
+  bool _isGettingLocation = false;
+  String? _existingPhotoPath;
+  late final MemoryRepository _repository;
 
   @override
   void initState() {
     super.initState();
+    _repository = context.read<MemoryRepository>();
     if (widget.memory != null) {
       _isEditing = true;
       final memory = widget.memory!;
       _titleController.text = memory.title;
       _descriptionController.text = memory.description ?? '';
       _visitDate = DateTime.fromMillisecondsSinceEpoch(memory.visitDate);
+      _visitDateController.text = _formatVisitDate(_visitDate!);
       _latitude = memory.latitude;
       _longitude = memory.longitude;
       _address = memory.address;
-
-      // If there's an existing photo, we'd need to load it
-      // For now, we'll leave _imageFile as null and allow user to change it
+      _existingPhotoPath = memory.photoPath;
     }
   }
 
@@ -51,6 +59,7 @@ class _AddMemoryPageState extends State<AddMemoryPage> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _visitDateController.dispose();
     super.dispose();
   }
 
@@ -60,6 +69,7 @@ class _AddMemoryPageState extends State<AddMemoryPage> {
       if (pickedFile != null) {
         setState(() {
           _imageFile = File(pickedFile.path);
+          _removeExistingPhoto = false;
         });
       }
     } on PlatformException catch (e) {
@@ -77,6 +87,7 @@ class _AddMemoryPageState extends State<AddMemoryPage> {
   Future<void> _removeImage() async {
     setState(() {
       _imageFile = null;
+      _removeExistingPhoto = true;
     });
   }
 
@@ -105,6 +116,8 @@ class _AddMemoryPageState extends State<AddMemoryPage> {
         }
         return;
       }
+    } else if (!_removeExistingPhoto) {
+      imagePath = _existingPhotoPath;
     }
 
     // Determine visitDate: use picked date or now
@@ -114,6 +127,7 @@ class _AddMemoryPageState extends State<AddMemoryPage> {
 
     // Create the memory object
     final memory = Memory(
+      id: _isEditing ? widget.memory!.id : null,
       title: _titleController.text,
       description: _descriptionController.text.isEmpty
           ? null
@@ -130,9 +144,8 @@ class _AddMemoryPageState extends State<AddMemoryPage> {
     );
 
     try {
-      final repository = MemoryRepository.instance();
       if (_isEditing) {
-        await repository.updateMemory(memory);
+        await _repository.updateMemory(memory);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Memory updated successfully!')),
@@ -140,7 +153,7 @@ class _AddMemoryPageState extends State<AddMemoryPage> {
           Navigator.of(context).pop();
         }
       } else {
-        await repository.insertMemory(memory);
+        await _repository.insertMemory(memory);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Memory saved successfully!')),
@@ -184,23 +197,7 @@ class _AddMemoryPageState extends State<AddMemoryPage> {
                   child: Stack(
                     alignment: Alignment.bottomCenter,
                     children: [
-                      _imageFile != null
-                          ? Image.file(
-                              _imageFile!,
-                              width: 200,
-                              height: 200,
-                              fit: BoxFit.cover,
-                            )
-                          : Container(
-                              width: 200,
-                              height: 200,
-                              color: Colors.grey[300],
-                              child: const Icon(
-                                Icons.image,
-                                size: 50,
-                                color: Colors.grey,
-                              ),
-                            ),
+                      _buildImagePreview(),
                       Positioned(
                         right: 0,
                         child: Row(
@@ -213,7 +210,9 @@ class _AddMemoryPageState extends State<AddMemoryPage> {
                               icon: const Icon(Icons.photo_library),
                               onPressed: () => _pickImage(ImageSource.gallery),
                             ),
-                            if (_imageFile != null)
+                            if (_imageFile != null ||
+                                (_existingPhotoPath != null &&
+                                    !_removeExistingPhoto))
                               IconButton(
                                 icon: const Icon(Icons.close),
                                 onPressed: _removeImage,
@@ -252,15 +251,12 @@ class _AddMemoryPageState extends State<AddMemoryPage> {
                 const SizedBox(height: 16),
                 // Visit date field
                 TextFormField(
-                  decoration: InputDecoration(
-                    labelText: _visitDate == null
-                        ? 'Visit date'
-                        : 'Visit date: ${_visitDate!.toLocal()}'.split(' ')[0],
+                  controller: _visitDateController,
+                  decoration: const InputDecoration(
+                    labelText: 'Visit date',
+                    hintText: 'Select a date',
                     border: OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.calendar_today),
-                      onPressed: _pickVisitDate,
-                    ),
+                    suffixIcon: Icon(Icons.calendar_today),
                   ),
                   readOnly: true,
                   onTap: _pickVisitDate,
@@ -270,11 +266,22 @@ class _AddMemoryPageState extends State<AddMemoryPage> {
                   child: ListTile(
                     leading: const Icon(Icons.location_on),
                     title: const Text('Location'),
-                    subtitle: Text(_address ?? 'Not added'),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.add_location),
-                      onPressed: _getCurrentLocation,
+                    subtitle: Text(
+                      _isGettingLocation
+                          ? 'Getting an accurate location...'
+                          : _address ?? 'Not added',
                     ),
+                    trailing: _isGettingLocation
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : IconButton(
+                            icon: const Icon(Icons.add_location),
+                            tooltip: 'Add current location',
+                            onPressed: _getCurrentLocation,
+                          ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -287,6 +294,36 @@ class _AddMemoryPageState extends State<AddMemoryPage> {
     );
   }
 
+  Widget _buildImagePreview() {
+    if (_imageFile != null) {
+      return Image.file(
+        _imageFile!,
+        width: 200,
+        height: 200,
+        fit: BoxFit.cover,
+      );
+    }
+    if (_existingPhotoPath != null && !_removeExistingPhoto) {
+      return Image.file(
+        File(_existingPhotoPath!),
+        width: 200,
+        height: 200,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => _buildImagePlaceholder(),
+      );
+    }
+    return _buildImagePlaceholder();
+  }
+
+  Widget _buildImagePlaceholder() {
+    return Container(
+      width: 200,
+      height: 200,
+      color: Colors.grey[300],
+      child: const Icon(Icons.image, size: 50, color: Colors.grey),
+    );
+  }
+
   Future<void> _pickVisitDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -294,53 +331,179 @@ class _AddMemoryPageState extends State<AddMemoryPage> {
       firstDate: DateTime(1900),
       lastDate: DateTime(2100),
     );
-    if (picked != null && picked != _visitDate) {
+    if (picked != null) {
       setState(() {
         _visitDate = picked;
+        _visitDateController.text = _formatVisitDate(picked);
       });
     }
   }
 
+  String _formatVisitDate(DateTime date) {
+    final localDate = date.toLocal();
+    return '${localDate.day.toString().padLeft(2, '0')}/'
+        '${localDate.month.toString().padLeft(2, '0')}/'
+        '${localDate.year}';
+  }
+
   Future<void> _getCurrentLocation() async {
+    if (_isGettingLocation) {
+      return;
+    }
+    setState(() => _isGettingLocation = true);
+
     try {
-      // Request location permission
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        if (mounted) {
+          _showLocationMessage(
+            'Location services are turned off. Turn them on to add a location.',
+            onSettings: () => Geolocator.openLocationSettings(),
+          );
+        }
+        return;
+      }
+
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
+      }
+
+      if (permission == LocationPermission.denied) {
+        if (mounted) {
+          _showLocationMessage('Location permission was denied.');
+        }
+        return;
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          _showLocationMessage(
+            'Location permission is blocked. Enable it in app settings.',
+            onSettings: () => Geolocator.openAppSettings(),
+          );
+        }
+        return;
+      }
+
+      if (!kIsWeb) {
+        final accuracyStatus = await Geolocator.getLocationAccuracy();
+        if (accuracyStatus == LocationAccuracyStatus.reduced) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Location permissions are denied')),
+            _showLocationMessage(
+              'Approximate location is enabled. Choose "Precise" for GeoDiary '
+              'in app settings, then try again.',
+              onSettings: () => Geolocator.openAppSettings(),
             );
           }
           return;
         }
       }
 
-      // Get current position
-      Position position = await Geolocator.getCurrentPosition(
-        // ignore: deprecated_member_use
-        desiredAccuracy: LocationAccuracy.high,
-      );
+      final Position position = await _getAccuratePosition();
+      final String accuracyLabel = position.accuracy > 0
+          ? ' (±${position.accuracy.toStringAsFixed(0)} m)'
+          : '';
 
-      // Use coordinates as address (geocoding temporarily disabled due to import issues)
-      String address = '${position.latitude}, ${position.longitude}';
-
-      // Update state
       if (mounted) {
         setState(() {
           _latitude = position.latitude;
           _longitude = position.longitude;
-          _address = address;
+          _address =
+              '${position.latitude.toStringAsFixed(6)}, '
+              '${position.longitude.toStringAsFixed(6)}';
         });
+        _showLocationMessage('Location captured$accuracyLabel.');
+      }
+    } on TimeoutException {
+      if (mounted) {
+        _showLocationMessage(
+          'Location request timed out. Move to an open area and try again.',
+        );
+      }
+    } on LocationServiceDisabledException {
+      if (mounted) {
+        _showLocationMessage(
+          'Location services are turned off. Turn them on to add a location.',
+          onSettings: () => Geolocator.openLocationSettings(),
+        );
       }
     } catch (e) {
       debugPrint('Error getting location: $e');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to get location: $e')));
+        _showLocationMessage('Failed to get location: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isGettingLocation = false);
       }
     }
+  }
+
+  /// Gets a fresh high-accuracy fix. If the first fix is imprecise, listens
+  /// briefly for a better one instead of saving a cached/network location.
+  Future<Position> _getAccuratePosition() async {
+    Position best = await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.best,
+        timeLimit: Duration(seconds: 20),
+      ),
+    );
+
+    if (best.accuracy <= 0 || best.accuracy <= 30) {
+      return best;
+    }
+
+    final completer = Completer<Position>();
+    late StreamSubscription<Position> subscription;
+    Timer? timer;
+
+    subscription =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.best,
+            distanceFilter: 0,
+          ),
+        ).listen(
+          (position) {
+            if (position.accuracy > 0 && position.accuracy < best.accuracy) {
+              best = position;
+            }
+            if (position.accuracy > 0 && position.accuracy <= 20) {
+              best = position;
+              if (!completer.isCompleted) {
+                completer.complete(best);
+              }
+              timer?.cancel();
+              subscription.cancel();
+            }
+          },
+          onError: (Object error, StackTrace stackTrace) {
+            if (!completer.isCompleted) {
+              completer.complete(best);
+            }
+            timer?.cancel();
+            subscription.cancel();
+          },
+        );
+
+    timer = Timer(const Duration(seconds: 15), () {
+      if (!completer.isCompleted) {
+        completer.complete(best);
+      }
+      subscription.cancel();
+    });
+
+    return completer.future;
+  }
+
+  void _showLocationMessage(String message, {VoidCallback? onSettings}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        action: onSettings == null
+            ? null
+            : SnackBarAction(label: 'Settings', onPressed: onSettings),
+      ),
+    );
   }
 }

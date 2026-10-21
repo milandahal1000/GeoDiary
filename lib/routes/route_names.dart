@@ -2,6 +2,9 @@
 ///
 /// Use these constants to navigate between screens.
 class RouteNames {
+  /// The login screen.
+  static const String login = '/login';
+
   /// The journal/home screen.
   static const String journal = '/';
 
@@ -16,4 +19,7 @@ class RouteNames {
 
   /// The map screen.
   static const String map = '/map';
+
+  /// The settings screen.
+  static const String settings = '/settings';
 }

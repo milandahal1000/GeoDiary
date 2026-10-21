@@ -2,7 +2,7 @@ import 'package:geodiary/core/database/database_helper.dart';
 import 'package:geodiary/features/journal/domain/memory.dart';
 import 'package:sqflite/sqflite.dart';
 
-/// Repository for accessing memory data from the SQLite database.
+/// Repository for accessing memory data from the local SQLite database.
 class MemoryRepository {
   final DatabaseHelper _dbHelper;
 
@@ -12,17 +12,21 @@ class MemoryRepository {
       MemoryRepository(DatabaseHelper.instance());
 
   /// Insert a new memory into the database.
-  Future<int> insertMemory(Memory memory) async {
+  Future<String> insertMemory(Memory memory) async {
     final db = await _dbHelper.database;
-    return await db.insert(
+    final String id =
+        memory.id ?? DateTime.now().microsecondsSinceEpoch.toString();
+    final memoryToStore = memory.copyWith(id: id);
+    await db.insert(
       'memories',
-      memory.toMap(),
+      memoryToStore.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+    return id;
   }
 
   /// Retrieve a memory by its id.
-  Future<Memory?> getMemory(int id) async {
+  Future<Memory?> getMemory(String id) async {
     final db = await _dbHelper.database;
     final List<Map<String, Object?>> maps = await db.query(
       'memories',
@@ -47,10 +51,13 @@ class MemoryRepository {
     });
   }
 
-  /// Update an existing memory.
+  /// Update an existing memory. Returns the number of rows affected.
   Future<int> updateMemory(Memory memory) async {
+    if (memory.id == null) {
+      throw ArgumentError('Cannot update a memory without an id.');
+    }
     final db = await _dbHelper.database;
-    return await db.update(
+    return db.update(
       'memories',
       memory.toMap(),
       where: 'id = ?',
@@ -58,9 +65,9 @@ class MemoryRepository {
     );
   }
 
-  /// Delete a memory by its id.
-  Future<int> deleteMemory(int id) async {
+  /// Delete a memory by its id. Returns the number of rows affected.
+  Future<int> deleteMemory(String id) async {
     final db = await _dbHelper.database;
-    return await db.delete('memories', where: 'id = ?', whereArgs: [id]);
+    return db.delete('memories', where: 'id = ?', whereArgs: [id]);
   }
 }

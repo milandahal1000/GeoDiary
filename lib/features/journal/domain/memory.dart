@@ -1,6 +1,6 @@
 /// Represents a memory entry in the GeoDiary app.
 class Memory {
-  final int? id; // nullable for new memories before insertion
+  final String? id; // nullable for new memories before insertion
   final String title;
   final String? description;
   final int visitDate; // milliseconds since epoch
@@ -37,7 +37,7 @@ class Memory {
 
   /// Creates a copy of this memory with the given fields replaced.
   Memory copyWith({
-    int? id,
+    String? id,
     String? title,
     String? description,
     int? visitDate,
@@ -81,16 +81,16 @@ class Memory {
   /// Creates a memory from a map (typically from the database).
   factory Memory.fromMap(Map<String, Object?> map) {
     return Memory(
-      id: map['id'] as int?,
+      id: map['id']?.toString(),
       title: map['title'] as String,
       description: map['description'] as String?,
-      visitDate: map['visitDate'] as int,
+      visitDate: (map['visitDate'] as num).toInt(),
       photoPath: map['photoPath'] as String?,
-      latitude: map['latitude'] as double?,
-      longitude: map['longitude'] as double?,
+      latitude: (map['latitude'] as num?)?.toDouble(),
+      longitude: (map['longitude'] as num?)?.toDouble(),
       address: map['address'] as String?,
-      createdAt: map['createdAt'] as int,
-      updatedAt: map['updatedAt'] as int,
+      createdAt: (map['createdAt'] as num).toInt(),
+      updatedAt: (map['updatedAt'] as num).toInt(),
     );
   }
 
