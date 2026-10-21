@@ -68,39 +68,4 @@ class ProfileService {
       throw Exception('Failed to create or update profile: $e');
     }
   }
-
-  /// Retrieve current user's profile from Firestore
-  Future<UserProfile?> getCurrentUserProfile() async {
-    try {
-      final user = _auth.currentUser;
-      if (user == null) {
-        return null;
-      }
-
-      final profileRef = _getProfileRef();
-      final docSnapshot = await profileRef.get();
-
-      if (docSnapshot.exists) {
-        return UserProfile.fromDocument(docSnapshot);
-      }
-      return null;
-    } catch (e) {
-      throw Exception('Failed to retrieve profile: $e');
-    }
-  }
-
-  /// Update specific profile fields (merge strategy)
-  Future<void> updateProfileFields(Map<String, dynamic> updates) async {
-    try {
-      final user = _auth.currentUser;
-      if (user == null) {
-        throw Exception('No authenticated user');
-      }
-
-      final profileRef = _getProfileRef();
-      await profileRef.update(updates);
-    } catch (e) {
-      throw Exception('Failed to update profile fields: $e');
-    }
-  }
 }

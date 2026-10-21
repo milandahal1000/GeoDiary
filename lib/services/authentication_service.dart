@@ -18,14 +18,8 @@ class AuthenticationService {
     required this._profileService,
   });
 
-  /// Stream of authentication state changes.
-  Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
-
   /// Current authenticated user.
   User? get currentUser => _firebaseAuth.currentUser;
-
-  /// Check if user is currently signed in.
-  bool get isSignedIn => _firebaseAuth.currentUser != null;
 
   /// Sign in with Google.
   Future<UserCredential> signInWithGoogle() async {
@@ -134,23 +128,6 @@ class AuthenticationService {
         code: 'ERROR_SIGN_OUT_FAILED',
         message: 'Sign out failed: $e',
       );
-    }
-  }
-
-  /// Get current user's ID token (for backend communication if needed).
-  Future<String?> getIdToken() async {
-    final User? user = _firebaseAuth.currentUser;
-    if (user != null) {
-      return await user.getIdToken();
-    }
-    return null;
-  }
-
-  /// Reload current user data.
-  Future<void> reloadUser() async {
-    final User? user = _firebaseAuth.currentUser;
-    if (user != null) {
-      await user.reload();
     }
   }
 }

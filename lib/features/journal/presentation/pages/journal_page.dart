@@ -1,5 +1,3 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geodiary/features/journal/data/memory_repository.dart';
@@ -394,7 +392,7 @@ class _JournalPageState extends State<JournalPage> {
                         icon: const Icon(Icons.delete),
                         tooltip: 'Delete memory',
                         onPressed: () {
-                          _showDeleteConfirmation(context, memory.id!);
+                          _showDeleteConfirmation(memory.id!);
                         },
                       ),
                     ],
@@ -408,22 +406,22 @@ class _JournalPageState extends State<JournalPage> {
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context, String memoryId) {
+  void _showDeleteConfirmation(String memoryId) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Memory'),
         content: const Text(
           'Are you sure you want to delete this memory? This action cannot be undone.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.of(context).pop();
+              Navigator.of(dialogContext).pop();
               try {
                 await _repository.deleteMemory(memoryId);
                 if (!mounted) return;
@@ -433,7 +431,6 @@ class _JournalPageState extends State<JournalPage> {
                 _refreshMemories();
               } catch (e) {
                 if (!mounted) return;
-                // ignore: duplicate_ignore
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Failed to delete memory: $e')),
                 );

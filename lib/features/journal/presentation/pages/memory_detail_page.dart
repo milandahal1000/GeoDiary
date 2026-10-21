@@ -56,7 +56,7 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
             icon: const Icon(Icons.edit),
           ),
           IconButton(
-            onPressed: () => _showDeleteConfirmation(context),
+            onPressed: () => _showDeleteConfirmation(),
             tooltip: 'Delete',
             icon: const Icon(Icons.delete),
           ),
@@ -168,22 +168,22 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
         '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 
-  void _showDeleteConfirmation(BuildContext context) {
+  void _showDeleteConfirmation() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Memory'),
         content: const Text(
           'Are you sure you want to delete this memory? This action cannot be undone.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.of(context).pop();
+              Navigator.of(dialogContext).pop();
               try {
                 await _repository.deleteMemory(widget.memory.id!);
                 if (!mounted) return;
